@@ -8,3 +8,9 @@ To build and upload this module:
 ```
 make upload
 ```
+
+This deploys the module to [pypi](https://pypi.org/project/flask-auth-utils/) where it can be installed with:
+
+```
+pip install flask-auth-utils
+```

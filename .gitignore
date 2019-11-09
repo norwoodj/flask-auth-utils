@@ -1,15 +1,7 @@
 dist/
-node_modules/
 *.pyc
 __pycache__
 build
 *.egg-info
 *.iml
 *.tgz
-jscripts/*.sh
-jscripts/utilities/*.sh
-requirements.lock
-_version.json
-version.txt
-.idea
-.DS_Store

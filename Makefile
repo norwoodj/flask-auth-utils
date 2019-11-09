@@ -1,48 +1,22 @@
-PYTHON_IMAGE=python:3.7.3-slim
-DOCKER_REPOSITORY=jnorwood
+CURRENT_VERSION := $(shell date -u "+%y.%m%d")
+VERSION_PLACEHOLDER := _VERSION
 
 
-.PHONY: all
-all: uwsgi nginx webpack_builder
-
-version.txt:
-	echo release-$(shell docker run --rm --entrypoint date $(PYTHON_IMAGE) --utc "+%Y%m%d-%H%M") > version.txt
-
-_version.json: version.txt
-	cat version.txt > _version.json
-
-.PHONY: nginx
-nginx: _version.json
-	cp _version.json web/src/
-	docker build -t $(DOCKER_REPOSITORY)/stupidchess-nginx:current -f docker/Dockerfile-nginx .
-
-.PHONY: uwsgi
-uwsgi:
-	docker build -t $(DOCKER_REPOSITORY)/stupidchess-uwsgi:current -f docker/Dockerfile-uwsgi .
-
-.PHONY: webpack_builder
-webpack_builder:
-	docker build -t $(DOCKER_REPOSITORY)/stupidchess-webpack_builder:current -f docker/Dockerfile-webpack_builder .
-
-.PHONY: push
-push: nginx uwsgi version.txt
-	docker tag $(DOCKER_REPOSITORY)/stupidchess-uwsgi:current $(DOCKER_REPOSITORY)/stupidchess-uwsgi:$(shell cat version.txt)
-	docker tag $(DOCKER_REPOSITORY)/stupidchess-nginx:current $(DOCKER_REPOSITORY)/stupidchess-nginx:$(shell cat version.txt)
-	docker push $(DOCKER_REPOSITORY)/stupidchess-uwsgi:$(shell cat version.txt)
-	docker push $(DOCKER_REPOSITORY)/stupidchess-nginx:$(shell cat version.txt)
-
-.PHONY: run
-run: all
-	docker-compose -f docker/docker-compose.yaml up
-
-.PHONY: run-no-build
-run-no-build:
-	docker-compose -f docker/docker-compose.yaml up
-
-.PHONY: clear-data
-clear-data:
-	docker-compose -f docker/docker-compose.yaml down
+default:
+	@echo "Available Targets:"
+	@echo
+	@echo "  clean  - Delete all build artifacts and clean up versioning"
+	@echo "  dist   - Build the python package to pypi"
+	@echo "  upload - Build and upload the python package to pypi"
 
 .PHONY: clean
-clean:
-	rm -f version.txt _version.json web/src/_version.json
+clean: 
+	rm -rf dist *.egg-info
+	sed -i "" "s|$(CURRENT_VERSION)|$(VERSION_PLACEHOLDER)|g" setup.py
+
+dist:
+	sed -i "" "s|$(VERSION_PLACEHOLDER)|$(CURRENT_VERSION)|g" setup.py
+	python setup.py sdist
+
+upload: dist
+	pipenv run twine upload dist/*
